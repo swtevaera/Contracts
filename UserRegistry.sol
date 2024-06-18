@@ -4,11 +4,11 @@ pragma solidity ^0.8.20;
 contract UserRegistry {
     // Revert when the caller is required to have an sid but does not have one.
     error HasNoId();
-
+    error CallerNotTrusted();
     // Struct to hold user details
     struct User {
-        string name;
-        string icon;
+        bytes32 name;
+        bytes32 icon;
     }
     // Users Ids Count For Anon World Game
     uint256 private userId;
@@ -35,10 +35,10 @@ contract UserRegistry {
     mapping(address => bool) private trustedCallers;
 
     // Event to be emitted when a new user is registered
-    event UserRegistered(address indexed userAddress, string name);
+    event UserRegistered(address indexed userAddress, bytes32 name);
 
     // Event to be emitted when user details are updated
-    event UserDetailsUpdated(address indexed userAddress, string name);
+    event UserDetailsUpdated(address indexed userAddress, bytes32 name);
 
     // Event to be emitted when a trusted caller is added or removed
     event TrustedCallerAdded(address indexed caller);
@@ -53,18 +53,11 @@ contract UserRegistry {
     // Event to be emitted when skill are added to a user
     event SkillAdded(address indexed userAddress, string skill);
 
-    // // Modifier to check if the user is registered
-    // modifier isRegistered() {
-    //     require(
-    //         bytes(users[msg.sender].name).length != 0,
-    //         "User not registered"
-    //     );
-    //     _;
-    // }
-
     // Modifier to check if the caller is trusted
     modifier onlyTrustedCaller() {
-        require(trustedCallers[msg.sender], "Caller is not trusted");
+        if (!trustedCallers[msg.sender]) {
+            revert CallerNotTrusted();
+        }        
         _;
     }
 
@@ -87,14 +80,10 @@ contract UserRegistry {
 
     // Function to register a new user (only callable by trusted callers)
     function registerUser(
-        string memory _name,
-        string memory _icon,
+        bytes32 _name,
+        bytes32 _icon,
         address _user
     ) public onlyTrustedCaller {
-        require(
-            bytes(users[_user].name).length == 0,
-            "User already registered"
-        );
 
         users[_user] = User({name: _name, icon: _icon});
         // Perf: inlining this can save ~ 20-40 gas per call at the expense of readability
@@ -114,7 +103,7 @@ contract UserRegistry {
     // Function to get user details
     function getUser(
         address _userAddress
-    ) public view returns (string memory, string memory) {
+    ) public view returns (bytes32 , bytes32) {
         User storage user = users[_userAddress];
         return (user.name, user.icon);
     }

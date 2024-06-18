@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 contract TaskRegistry {
 
+    error CallerNotTrusted();
     // Define the tasks that crewmates need to complete
     enum CrewmateTask { FixWiring, EmptyChute, SwipeCard, AlignEngineOutput, CalibrateDistributor }
 
@@ -36,7 +37,9 @@ contract TaskRegistry {
 
     // Define a modifier to restrict access to trusted callers
     modifier onlyTrustedCallers() {
-        require(trustedCallers[msg.sender], "Caller is not trusted");
+        if (!trustedCallers[msg.sender]) {
+            revert CallerNotTrusted();
+        }
         _;
     }
 

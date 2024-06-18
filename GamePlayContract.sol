@@ -28,12 +28,12 @@ contract GameEvent {
     }
 
     // Function to submit task proof
-    function submitImpostorTask(bytes memory proof,uint256 _matchId, TaskRegistry.CrewmateTask _task) public {
+    function submitImpostorTask(bytes memory proof,uint256 _matchId, TaskRegistry.ImpostorTask _task) public {
         // Verify the proof by calling the external contract
         // bool isValid = verifierContract.verifyProof(proof);
         // require(isValid, "Invalid proof provided");
         // Call the external contract to reward the crewmate
-        matchAndVotingRegistry.crewmateTaskCompletion(_matchId,_task);
+        matchAndVotingRegistry.impostorTaskCompletion(_matchId,_task);
 
 
     }

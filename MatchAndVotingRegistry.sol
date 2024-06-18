@@ -173,8 +173,8 @@ contract MatchAndVotingRegistry {
     }
 
     // Function to create a new match
-    function startMatch(
-        uint256 _matchStartTime,
+    function createMatch(
+        uint16 _matchStartTime,
         uint8 _impostorCount,
         uint8 _crewmateCount
     ) external onlyTrustedCaller {
@@ -208,31 +208,44 @@ contract MatchAndVotingRegistry {
         }
         Match storage matchDetails = matches[_matchId];
         // if(playersForMatchId[_matchId].length >= matchDetails.playerCount) revert PlayerNotInMatch();
-        bool isTrue;
-        uint8 randNum = _generateRandomNumber(2);
+        // bool isTrue;
         if (
-            randNum == 0 &&
-            impostorsForMatchId[matchIdCounter].length <
-            matchDetails.impostorCount
-        ) {
-            isImpostorForMatchId[matchIdCounter][_player] = true;
-            impostorsForMatchId[matchIdCounter].push(_player);
-            isTrue = true;
-        } else if (
-            randNum == 1 &&
-            crewmateForMatchId[matchIdCounter].length <
+            impostorsForMatchId[matchIdCounter].length ==
+            matchDetails.impostorCount &&
+            crewmateForMatchId[matchIdCounter].length ==
             matchDetails.crewmateCount
-        ) {
-            isCrewmateForMatchId[matchIdCounter][_player] = true;
-            crewmateForMatchId[matchIdCounter].push(_player);
-            isTrue = true;
+        ) {revert PlayerNotInMatch();}
+        uint8 randNum = _generateRandomNumber(2);
+        if (randNum == 0) {
+            if (
+                impostorsForMatchId[matchIdCounter].length <
+                matchDetails.impostorCount
+            ) {
+                isImpostorForMatchId[matchIdCounter][_player] = true;
+                impostorsForMatchId[matchIdCounter].push(_player);
+                // isTrue = true;
+            } else {
+                isCrewmateForMatchId[matchIdCounter][_player] = true;
+                crewmateForMatchId[matchIdCounter].push(_player);
+                // isTrue = true;
+            }
+        } else if (randNum == 1) {
+            if (
+                crewmateForMatchId[matchIdCounter].length <
+                matchDetails.crewmateCount
+            ) {
+                isCrewmateForMatchId[matchIdCounter][_player] = true;
+                crewmateForMatchId[matchIdCounter].push(_player);
+                // isTrue = true;
+            } else {
+                isImpostorForMatchId[matchIdCounter][_player] = true;
+                impostorsForMatchId[matchIdCounter].push(_player);
+                // isTrue = true;
+            }
         }
-        if (isTrue) {
-            playersForMatchId[_matchId].push(_player);
-            playersPresent[_matchId][_player] = true;
-            return true;
-        }
-        return false;
+        playersForMatchId[_matchId].push(_player);
+        playersPresent[_matchId][_player] = true;
+        return true;
     }
 
     // assigned role
@@ -328,7 +341,9 @@ contract MatchAndVotingRegistry {
             emit MatchEnded(_matchId);
         }
         matches[_matchId] = matchDetails;
-        cntImpostorTaskProofVerified[_matchId][TaskRegistry.ImpostorTask.KillCrewmate] += 1;
+        cntImpostorTaskProofVerified[_matchId][
+            TaskRegistry.ImpostorTask.KillCrewmate
+        ] += 1;
         emit PlayerKilled(_matchId, _player);
     }
 
@@ -526,8 +541,7 @@ contract MatchAndVotingRegistry {
         address _player,
         TaskRegistry.CrewmateTask _task
     ) external view onlyTrustedCaller returns (bool) {
-        return
-            isCrewmateTaskAssigned[_matchId][_player][_task];
+        return isCrewmateTaskAssigned[_matchId][_player][_task];
     }
 
     // Function to check if a player is an impostor for a given match ID
@@ -579,7 +593,7 @@ contract MatchAndVotingRegistry {
             _crewmateTasks.length != 0
         ) {
             for (uint8 i = 0; i < _crewmateTasks.length; i++) {
-                // player assigned task
+                //player assigned task
                 if (
                     !isCrewmateTaskAssigned[_matchId][_player][
                         _crewmateTasks[i]
